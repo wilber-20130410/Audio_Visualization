@@ -20,7 +20,7 @@
 
 本程序暂时没有可执行程序
 
-程序变化请看[更新日志](https://github.com/wilber-20130410/Audio_Visualization/blob/main/doce/CHANGLOG.md)
+程序变化请看[更新日志](https://github.com/wilber-20130410/Audio_Visualization/blob/main/doce/CHANGELOG.md)
 
 ## 贡献协议
 
