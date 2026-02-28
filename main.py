@@ -1104,227 +1104,218 @@ class AudioVisualizer_output:
         pygame.quit()
 
 class AudioVisualizer_Audio:
-    """音频文件可视化类"""
-    def __init__(self, chunk=2048, format=pyaudio.paInt16, channels=2, rate=44100):
-        self.chunk = chunk
-        self.format = format
-        self.channels = channels
-        self.rate = rate
-        self.playing = False
-        self.paused = False
-        self.audio_file = None
-        self.p = None
-        self.stream = None
-        self.current_audio_data = np.zeros(chunk)
-        self.lock = threading.Lock()
+    """音频文件可视化类（适配audio_capture库）"""
+    def __init__(self):
+        pygame.mixer.music.stop()
+        self.WIDTH, self.HEIGHT = 1280, 720
+        self.BAR_COUNT = 100
+        self.CHUNK = 2048
+        self.FORMAT = pyaudio.paInt16
+        self.CHANNELS = 2
+        self.RATE = 44100
+        self.smoothing_factor = 0.2
+        self.peak_decay = 0.98
+        self.peak_hold = 1.0
+        self._init_pygame()
+        self.audio_file = self._select_audio_file()
+        self.capture = None
+        self.use_audio_capture = False
+        self.audio_data = None
+        self.playback_pos = 0
+        self.peak_values = np.zeros(self.BAR_COUNT)
+        self.running = True
+        self._init_audio_capture()
+        if not self.use_audio_capture:
+            self._init_fallback_audio()
+
+    def _init_pygame(self):
+        """初始化Pygame"""
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        pygame.display.set_caption("Audio Visualization - Audio File Mode")
+        self.clock = pygame.time.Clock()
         try:
-            pygame.mixer.init(frequency=rate, size=-16, channels=channels, buffer=chunk)
-        except Exception as e:
-            print(f"初始化mixer错误: {e}")
-        self._init_matplotlib()
-    
-    def _init_matplotlib(self):
-        """初始化matplotlib图形"""
-        plt.rcParams['toolbar'] = 'None'
-        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(12, 8))
-        self.fig.canvas.manager.set_window_title('Audio Visualization - Audio File Mode')
-        self.fig.subplots_adjust(hspace=0.5)
-        self.x = np.arange(0, self.chunk)
-        self.line, = self.ax1.plot(self.x, np.zeros(self.chunk), 'b-', linewidth=0.5)
-        self.ax1.set_title('Audio Waveform')
-        self.ax1.set_xlabel('Samples')
-        self.ax1.set_ylabel('Amplitude')
-        self.ax1.set_ylim(-32768, 32767)
-        self.ax1.set_xlim(0, self.chunk)
-        self.ax1.grid(True, alpha=0.3)
-        self.freqs = np.fft.rfftfreq(self.chunk, 1/self.rate)
-        self.line_fft, = self.ax2.semilogx(self.freqs, np.zeros(len(self.freqs)), 'r-', linewidth=0.5)
-        self.ax2.set_title('Frequency Spectrum')
-        self.ax2.set_xlabel('Frequency (Hz)')
-        self.ax2.set_ylabel('Amplitude')
-        self.ax2.set_xlim(20, self.rate/2)
-        self.ax2.set_ylim(0, 1)
-        self.ax2.grid(True, alpha=0.3)
-        self._add_controls()
-        self._init_audio_stream()
-        self.set_volume(0.7)
-        self.ani = FuncAnimation(self.fig, self.update_plot, interval=50, blit=True, cache_frame_data=False)
-    
-    def _add_controls(self):
-        """添加控制按钮"""
-        self.btn_ax = self.fig.add_axes([0.8, 0.02, 0.15, 0.06])
-        self.btn = plt.Button(self.btn_ax, 'Play/Pause')
-        self.btn.on_clicked(self.toggle_play_pause)
-        self.stop_ax = self.fig.add_axes([0.6, 0.02, 0.15, 0.06])
-        self.stop_btn = plt.Button(self.stop_ax, 'Stop')
-        self.stop_btn.on_clicked(self.stop)
-        self.file_ax = self.fig.add_axes([0.4, 0.02, 0.15, 0.06])
-        self.file_btn = plt.Button(self.file_ax, 'Select File')
-        self.file_btn.on_clicked(self.select_file)
-        self.vol_ax = self.fig.add_axes([0.1, 0.02, 0.2, 0.06])
-        self.vol_slider = plt.Slider(self.vol_ax, 'Volume', 0.0, 1.0, valinit=0.7)
-        self.vol_slider.on_changed(self.set_volume)
-    
-    def _init_audio_stream(self):
-        """初始化音频流"""
-        try:
-            self.p = pyaudio.PyAudio()
-            self.stream = self.p.open(format=self.format, channels=self.channels, rate=self.rate, input=True, output=False, frames_per_buffer=self.chunk, stream_callback=self.audio_callback)
-            self.stream.start_stream()
-        except Exception as e:
-            print(f"创建音频流错误: {e}")
-            print("可视化可能无法正常工作。请检查音频设置。")
-    
-    def audio_callback(self, in_data, frame_count, time_info, status):
-        """音频回调函数，用于捕获音频数据"""
-        if self.playing and not self.paused:
-            try:
-                audio_data = np.frombuffer(in_data, dtype=np.int16)
-                with self.lock:
-                    data_length = min(len(audio_data), len(self.current_audio_data))
-                    self.current_audio_data[:data_length] = audio_data[:data_length]
-            except Exception as e:
-                print(f"音频回调错误: {e}")
-        return (in_data, pyaudio.paContinue)
-    
-    def select_file(self, event=None):
-        """打开文件选择对话框"""
+            self.font = pygame.font.Font("./assets/Minecraft.ttf", 16)
+        except:
+            self.font = pygame.font.SysFont("Arial", 16)
+
+    def _select_audio_file(self):
+        """选择音频文件"""
         root = Tk()
         root.withdraw()
-        root.attributes('-topmost', True)
-        file_path = filedialog.askopenfilename(title="选择音频文件", filetypes=[("音频文件", "*.wav *.mp3 *.ogg *.flac"),
-                ("WAV文件", "*.wav"),
-                ("MP3文件", "*.mp3"),
-                ("OGG文件", "*.ogg"),
-                ("FLAC文件", "*.flac"),
-                ("所有文件", "*.*")
+        file_path = filedialog.askopenfilename(
+            title="选择音频文件",
+            filetypes=[
+                ("Audio Files", "*.wav *.mp3 *.ogg *.flac *.aac"),
+                ("All Files", "*.*")
             ]
         )
         root.destroy()
-        if file_path:
-            self.load_file(file_path)
-    
-    def load_file(self, file_path):
-        """加载音频文件"""
-        if not os.path.exists(file_path):
-            print(f"文件不存在: {file_path}")
-            return
-        if self.playing:
-            self.stop()
-        self.audio_file = file_path
+        return file_path if file_path else None
+
+    def _init_audio_capture(self):
+        """初始化audio_capture库"""
         try:
-            pygame.mixer.music.load(file_path)
-            print(f"已加载文件: {os.path.basename(file_path)}")
-            self.fig.suptitle(f"Audio File: {os.path.basename(file_path)}", fontsize=12)
-        except Exception as e:
-            print(f"加载文件失败: {e}")
-    
-    def toggle_play_pause(self, event = None):
-        """切换播放/暂停状态"""
-        if not self.audio_file:
-            print("请先选择音频文件")
-            return
-        if not self.playing:
-            self.play()
-        else:
-            if self.paused:
-                self.unpause()
+            import audio_capture
+            self.capture = audio_capture.AudioCapture()
+            if self.capture.initialize():
+                self.use_audio_capture = True
+                self.sample_rate = self.capture.get_sample_rate()
+                print("成功初始化audio_capture库")
             else:
-                self.pause()
-    
-    def play(self):
-        """开始播放音频"""
+                print("audio_capture初始化失败，使用回退方案")
+        except (ImportError, Exception) as e:
+            print(f"加载audio_capture失败: {e}，使用回退方案")
+
+    def _init_fallback_audio(self):
+        """回退初始化：使用pyaudio+pygame mixer"""
+        try:
+            self.p = pyaudio.PyAudio()
+            if self.audio_file:
+                pygame.mixer.music.load(self.audio_file)
+                self._load_audio_file_raw()
+            print("已初始化回退音频方案")
+        except Exception as e:
+            print(f"回退音频初始化失败: {e}")
+            self.audio_data = None
+
+    def _load_audio_file_raw(self):
+        """加载音频文件原始数据（用于FFT分析）"""
+        try:
+            if self.audio_file.endswith(".wav"):
+                import wave
+                with wave.open(self.audio_file, 'rb') as wf:
+                    self.CHANNELS = wf.getnchannels()
+                    self.RATE = wf.getframerate()
+                    self.FORMAT = self.p.get_format_from_width(wf.getsampwidth())
+                    frames = wf.readframes(wf.getnframes())
+                    self.audio_data = np.frombuffer(frames, dtype=np.int16)
+            else:
+                import soundfile as sf
+                data, self.RATE = sf.read(self.audio_file)
+                if len(data.shape) > 1:
+                    data = np.mean(data, axis=1)
+                self.audio_data = (data * 32767).astype(np.int16)
+            self.CHUNK = min(self.CHUNK, len(self.audio_data) // 100)
+            print(f"成功加载音频文件: {self.audio_file}")
+        except Exception as e:
+            print(f"加载音频文件原始数据失败: {e}")
+            self.audio_data = None
+
+    def _get_audio_chunk(self):
+        """获取音频块数据（适配两种方案）"""
         if not self.audio_file:
-            print("请先选择音频文件")
-            return
-        try:
-            pygame.mixer.music.play()
-            self.playing = True
-            self.paused = False
-            self.btn.label.set_text('Pause')
-            print("开始播放")
-        except Exception as e:
-            print(f"开始播放错误: {e}")
-    
-    def pause(self):
-        """暂停播放"""
-        try:
-            pygame.mixer.music.pause()
-            self.paused = True
-            self.btn.label.set_text('Resume')
-            print("播放暂停")
-        except Exception as e:
-            print(f"暂停播放错误: {e}")
-    
-    def unpause(self):
-        """继续播放"""
-        try:
-            pygame.mixer.music.unpause()
-            self.paused = False
-            self.btn.label.set_text('Pause')
-            print("继续播放")
-        except Exception as e:
-            print(f"继续播放错误: {e}")
-    
-    def stop(self, event=None):
-        """停止播放"""
-        try:
-            pygame.mixer.music.stop()
-            self.playing = False
-            self.paused = False
-            self.btn.label.set_text('Play/Pause')
-            with self.lock:
-                self.current_audio_data = np.zeros(self.chunk)
-            print("播放停止")
-        except Exception as e:
-            print(f"停止播放错误: {e}")
-    
-    def set_volume(self, val):
-        """设置音量"""
-        try:
-            pygame.mixer.music.set_volume(val)
-        except Exception as e:
-            print(f"设置音量错误: {e}")
-    
-    def update_plot(self, frame):
-        """更新可视化图表"""
-        with self.lock:
-            audio_data = self.current_audio_data.copy()
-        self.line.set_ydata(audio_data)
-        if np.max(np.abs(audio_data)) > 0:
-            try:
-                window = np.hanning(len(audio_data))
-                windowed_data = audio_data * window
-                fft_data = np.abs(np.fft.rfft(windowed_data))
-                if np.max(fft_data) > 0:
-                    fft_normalized = fft_data / np.max(fft_data)
-                    self.line_fft.set_ydata(fft_normalized)
-            except Exception as e:
-                pass
-        return self.line, self.line_fft
+            return np.zeros(self.CHUNK)
+        if self.use_audio_capture and self.capture:
+            audio_chunk = self.capture.get_audio_chunk(self.CHUNK)
+            if audio_chunk is not None and len(audio_chunk) > 0:
+                return audio_chunk
+            return np.zeros(self.CHUNK)
+        if self.audio_data is None:
+            return np.zeros(self.CHUNK)
+        end_pos = self.playback_pos + self.CHUNK * self.CHANNELS
+        if end_pos > len(self.audio_data):
+            end_pos = len(self.audio_data)
+            self.playback_pos = 0
+        chunk = self.audio_data[self.playback_pos:end_pos]
+        self.playback_pos = end_pos
+        if len(chunk) < self.CHUNK * self.CHANNELS:
+            chunk = np.pad(chunk, (0, self.CHUNK * self.CHANNELS - len(chunk)), mode='constant')
+        return chunk
+
+    def _process_fft(self, audio_chunk):
+        """处理FFT，生成频谱数据"""
+        if len(audio_chunk) == 0:
+            return np.zeros(self.BAR_COUNT)
+        if self.CHANNELS > 1:
+            audio_chunk = audio_chunk[::self.CHANNELS]
+        window = np.hanning(len(audio_chunk))
+        normalized_data = audio_chunk.astype(np.float32) / 32768.0
+        windowed_data = normalized_data * window
+        fft_data = np.abs(np.fft.rfft(windowed_data))
+        fft_data = fft_data[:len(fft_data) // 2]
+        freq_bins = np.logspace(np.log10(20), np.log10(self.RATE//2), self.BAR_COUNT + 1)
+        fft_freqs = np.fft.rfftfreq(len(windowed_data), 1/self.RATE)[:len(fft_data)]
+        spectrum = np.zeros(self.BAR_COUNT)
+        for i in range(self.BAR_COUNT):
+            mask = (fft_freqs >= freq_bins[i]) & (fft_freqs < freq_bins[i+1])
+            if np.any(mask):
+                spectrum[i] = np.mean(fft_data[mask])
+        spectrum = self.smoothing_factor * spectrum + (1 - self.smoothing_factor) * np.roll(spectrum, 1)
+        spectrum = np.nan_to_num(spectrum)
+        self.peak_values = np.maximum(self.peak_values * self.peak_decay, spectrum)
+        return spectrum
+
+    def _draw_visualization(self, spectrum):
+        """绘制音频可视化界面"""
+        self.screen.fill((10, 10, 20))
+        bar_width = self.WIDTH / self.BAR_COUNT
+        bar_spacing = 1
+        draw_width = bar_width - bar_spacing
+        for i in range(self.BAR_COUNT):
+            norm_height = min(spectrum[i] / 1000, 1.0)
+            bar_height = norm_height * self.HEIGHT * 0.8
+            hue = i / self.BAR_COUNT
+            color = (int(255 * (1 - hue)), int(255 * hue * (1 - hue) * 4), int(255 * hue))
+            x = i * bar_width
+            y = self.HEIGHT - bar_height - 40
+            pygame.draw.rect(self.screen, color, (x, y, draw_width, bar_height))
+            if self.show_peaks and self.peak_values[i] > 0:
+                peak_height = min(self.peak_values[i] / 1000, 1.0) * self.HEIGHT * 0.8
+                peak_y = self.HEIGHT - peak_height - 40
+                pygame.draw.line(self.screen, (255, 255, 255), (x, peak_y), (x + draw_width, peak_y), 2)
+        if self.audio_file:
+            file_name = os.path.basename(self.audio_file)
+            text = self.font.render(f"播放中: {file_name}", True, (200, 200, 200))
+            self.screen.blit(text, (10, 10))
+        hint = self.font.render("按ESC退出 | 空格暂停/继续", True, (150, 150, 150))
+        self.screen.blit(hint, (self.WIDTH - hint.get_width() - 10, 10))
+
+    def _handle_events(self):
+        """处理事件"""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
+                elif event.key == pygame.K_SPACE:
+                    if self.audio_file and not self.use_audio_capture:
+                        if pygame.mixer.music.get_busy():
+                            pygame.mixer.music.pause()
+                        else:
+                            pygame.mixer.music.unpause()
 
     def run(self):
-        """运行应用程序"""
-        try:
-            plt.show(block=True)
-        except Exception as e:
-            print(f"运行应用程序错误: {e}")
-        finally:
-            self.cleanup()
-    
-    def cleanup(self):
+        """运行主循环"""
+        if not self.audio_file:
+            print("未选择音频文件，退出")
+            return
+        if not self.use_audio_capture:
+            try:
+                pygame.mixer.music.play(-1 if self.audio_data is not None else 0)
+            except Exception as e:
+                print(f"播放音频失败: {e}")
+        self.show_peaks = True
+        while self.running:
+            self._handle_events()
+            audio_chunk = self._get_audio_chunk()
+            spectrum = self._process_fft(audio_chunk)
+            self._draw_visualization(spectrum)
+            pygame.display.flip()
+            self.clock.tick(60)
+        self._cleanup()
+
+    def _cleanup(self):
         """清理资源"""
-        try:
-            self.stop()
-            if hasattr(self, 'stream') and self.stream:
-                self.stream.stop_stream()
-                self.stream.close()
-            if hasattr(self, 'p') and self.p:
+        if self.use_audio_capture and self.capture:
+            self.capture.stop_capture()
+        else:
+            if hasattr(self, 'p'):
                 self.p.terminate()
-            pygame.mixer.quit()
-            plt.close('all')
-        except Exception as e:
-            print(f"清理资源错误: {e}")
+            pygame.mixer.music.stop()
+        
+        pygame.quit()
 
 def load_music():
     """加载音乐"""
