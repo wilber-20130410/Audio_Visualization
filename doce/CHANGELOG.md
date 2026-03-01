@@ -10,7 +10,7 @@ Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 先祝大家2026新年快乐🎉🎊🎉🎆🧨
 
-总项目更新版本号： v1.0.1-beta-2-build-0101080601.2026
+总项目更新版本号： v1.0.1-beta-3-build-0101080601.2026
 
 本项目更新版本号： v1.0.2-build-313090101080601.2026
 

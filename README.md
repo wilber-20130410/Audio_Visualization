@@ -16,7 +16,8 @@
 - noise         1.2.2
 - PyAudio       0.2.14
 - requests      2.32.5
-- audio_capture 1.0.0 (本地第三方库)
+- soundfile     0.13.1
+- audio_capture 1.0.2 (本地第三方库)
 
 本程序暂时没有可执行程序
 
