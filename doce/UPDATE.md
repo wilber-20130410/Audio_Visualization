@@ -18,7 +18,6 @@
 
 ### 其他
 
-- 将项目从[Python-wilber](https://github.com/wilber-20130410/Python-wilber)移动至本仓库
 - 如果您有建议、发现了Bug、问题或者您进行优化后的代码,欢迎向本人邮箱xuwb0410@163.com发送邮件,本人将在7天内进行回复
 
 
