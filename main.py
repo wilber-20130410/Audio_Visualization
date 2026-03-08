@@ -3,11 +3,11 @@
 名称:音频可视化
 作者:wilber-20130410
 版权: © 2025~2026 wilber-20130410
-版本:1.0.1[312031001171701] -> 1.0.2[313090101080601.2026](正式版)
+版本:1.0.2[312030101080601] -> 1.0.3[313090301151201.2026](正式版)
 日期:2026.01.01
 留言:
-1.Linux(Ubuntu)系统暂停支持。
-2.使用前请确保已经安装以下所使用的库。
+1.重新开启Linux(Ubuntu)系统支持。
+2.使用前请确保已经安装README.md所示的库。
 3.本人推荐使用Visual Studio Code或PyCharm Community作为IDE。
 4.需要安装python3及以上python环境(本人使用python3.13.9)。
 5.请不要改变资源文件所在的目录结构,否则程序将无法运行。
@@ -43,7 +43,7 @@ class AudioVisualizerLauncher:
         mixer.init()
         self.WIDTH, self.HEIGHT = 854, 480
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT), pygame.NOFRAME)
-        pygame.display.set_caption("Audio Visualization 1.0.2[313090101080601.2026]")
+        pygame.display.set_caption("Audio Visualization 1.0.3[313090301151201.2026]")
         self.BLACK = (0, 0, 0)
         self.DARK_GREEN = (0, 71, 0)
         self.GREEN = (0, 100, 0)
@@ -58,7 +58,7 @@ class AudioVisualizerLauncher:
         self.title_text = self.title_font.render("Audio Visualization", True, self.WHITE)
         self.title_shadow = self.title_font.render("Audio Visualization", True, self.GRAY)
         self.title_rect = self.title_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//3))
-        self.version_text = self.version_font.render("1.0.2[313090101080601.2026]", True, self.LIGHT_GRAY)
+        self.version_text = self.version_font.render("1.0.3[313090301151201.2026]", True, self.LIGHT_GRAY)
         self.version_rect = self.version_text.get_rect(bottomright=(self.WIDTH-10, self.HEIGHT-10))
         self.progress_width = self.WIDTH - 100
         self.progress_height = 5
@@ -321,7 +321,7 @@ class AudioVisualizer_start_1:
         pygame.init()
         self.WIDTH, self.HEIGHT = 1280, 720
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Audio Visualization 1.0.2[313090101080601.2026]")
+        pygame.display.set_caption("Audio Visualization 1.0.3[313090301151201.2026]")
         self.colors = {
             'background': (29, 33, 45),
             'panel': (40, 46, 52),
@@ -394,7 +394,7 @@ class AudioVisualizer_start_1:
         shadow = self.fonts['large'].render("Audio Visualization", True, (20, 40, 60))
         self.screen.blit(shadow, (self.WIDTH//2 - title.get_width()//2 + 3, 100 + 3))
         self.screen.blit(title, (self.WIDTH//2 - title.get_width()//2, 100))
-        version = self.fonts['small'].render("v1.0.2[313090101080601.2026]", True, (150, 150, 150))
+        version = self.fonts['small'].render("v1.0.3[313090301151201.2026]", True, (150, 150, 150))
         self.screen.blit(version, (self.WIDTH//2 - version.get_width()//2, 160))
     
     def _draw_buttons(self):
@@ -508,7 +508,7 @@ class AudioVisualizer_start_2:
         self.WIDTH, self.HEIGHT = 1280, 720
         self.PIXEL_SIZE = 4
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Audio Visualization 1.0.2[313090101080601.2026]")
+        pygame.display.set_caption("Audio Visualization 1.0.3[313090301151201.2026]")
         self.COLORS = {
             'black': (0, 0, 0),
             'white': (255, 255, 255),
@@ -635,7 +635,7 @@ class AudioVisualizer_start_2:
         shadow = self.font_large.render("Audio Visualization", True, (100, 100, 150))
         self.screen.blit(shadow, (self.WIDTH//2 - title.get_width()//2 + 3, 83))
         self.screen.blit(title, (self.WIDTH//2 - title.get_width()//2, 80))
-        subtitle = self.font_medium.render("v1.0.2[313090101080601.2026]", True, (200, 200, 255))
+        subtitle = self.font_medium.render("v1.0.3[313090301151201.2026]", True, (200, 200, 255))
         self.screen.blit(subtitle, (self.WIDTH//2 - subtitle.get_width()//2, 140))
         copyright = self.font_small.render("© 2025~2026 Wilber-20130410", True, (100, 100, 120))
         self.screen.blit(copyright, (self.WIDTH//2 - copyright.get_width()//2, self.HEIGHT - 40))

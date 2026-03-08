@@ -6,11 +6,40 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.3](https://github.com/wilber-20130410/Audio_Visualization/compare/v1.0.2...v1.0.3) - 2026-03-01
+
+总项目更新版本号： v1.0.1-beta-3-build-1301144501.2026
+
+本项目更新版本号： v1.0.3-build-313090301151201.2026
+
+### 新增
+
+- 新增Linux系统的支持
+- 新增依赖库：soundfile，版本：0.13.1
+
+### 修复
+
+- 无
+
+### 变更
+
+- 更改AudioVisualizer_Audio类为使用audio_capture库
+
+### 其他
+
+- 如果您有建议、发现了Bug、问题或者您进行优化后的代码,欢迎向本人邮箱xuwb0410@163.com发送邮件,本人将在7天内进行回复
+
+
+
+by:wilber-20130410
+
+2026.3.1
+
 ## [1.0.2](https://github.com/wilber-20130410/Audio_Visualization/compare/v1.0.2) - 2026-01-03
 
 先祝大家2026新年快乐🎉🎊🎉🎆🧨
 
-总项目更新版本号： v1.0.1-beta-2-build-0101080601.2026
+总项目更新版本号： v1.0.1-beta-3-build-0101080601.2026
 
 本项目更新版本号： v1.0.2-build-313090101080601.2026
 
