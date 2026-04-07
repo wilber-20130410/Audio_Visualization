@@ -4,6 +4,8 @@
 
 ## 说明
 
+开发版地址：[GitCode](https://gitcode.com/wilber-20130410/Audio_Visualization-dev)
+
 所用Python版本：
 
 - Python 3.19.3
