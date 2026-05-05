@@ -6,6 +6,34 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.1.0](https://github.com/wilber-20130410/Audio_Visualization/compare/v1.0.3...v1.1.0) - 2026-05-05
+
+总项目更新版本号： v1.0.1-beta-4-build-0505070001.2026
+
+本项目更新版本号： v1.1.0-build-313090505070001.2026
+
+### 新增
+
+- 文件sha256校验
+
+### 修复
+
+- 无
+
+### 变更
+
+- 优化了代码文件结构与启动速度
+
+### 其他
+
+- 如果您有建议、发现了Bug、问题或者您进行优化后的代码,欢迎向本人邮箱xuwb0410@163.com发送邮件,本人将在7天内进行回复
+
+
+
+by:wilber-20130410
+
+2026.5.5
+
 ## [1.0.3](https://github.com/wilber-20130410/Audio_Visualization/compare/v1.0.2...v1.0.3) - 2026-03-01
 
 总项目更新版本号： v1.0.1-beta-3-build-1301144501.2026
